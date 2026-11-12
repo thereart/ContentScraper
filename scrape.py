@@ -109,6 +109,9 @@ def crawl(start, max_pages, delay, log=print):
                 html = resp.read().decode(resp.headers.get_content_charset() or "utf-8", "replace")
         except Exception as e:
             log(f"  skip {url}: {e}")
+            if "CERTIFICATE_VERIFY_FAILED" in str(e):
+                log("  -> Python can't check website security certificates. On a Mac, open Applications > "
+                    "Python 3.x and double-click 'Install Certificates.command', then try again.")
             continue
         if urlparse(final).netloc != host or final in pages:
             continue  # redirected off-site, or to a page we already have

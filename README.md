@@ -6,8 +6,10 @@ The document has a contents list, then one section per page with the page title,
 
 ## What you need
 
-- A Windows PC
-- [Python](https://www.python.org/downloads/) 3.8 or newer. When installing, tick **"Add Python to PATH"**.
+- A Windows PC or a Mac
+- [Python](https://www.python.org/downloads/) 3.8 or newer
+  - **Windows:** when installing, tick **"Add Python to PATH"**.
+  - **Mac:** after installing, open **Applications → Python 3.x** and double-click **Install Certificates.command**. Without this, every website fails with a `CERTIFICATE_VERIFY_FAILED` error.
 
 Nothing else needs installing.
 
@@ -23,14 +25,27 @@ git clone https://github.com/thereart/ContentScraper.git
 
 ## How to use
 
-1. Double-click **`Start Scraper.bat`**. A small black window opens, and the scraper page opens in your web browser.
+1. Start the scraper. A small window opens, and the scraper page opens in your web browser.
+   - **Windows:** double-click **`Start Scraper.bat`**.
+   - **Mac:** double-click **`Start Scraper.command`**. See [First launch on a Mac](#first-launch-on-a-mac) if it's blocked.
 2. Paste a website address, e.g. `https://example.com`.
 3. Optionally change **Max pages** (default 200).
 4. Click **Scrape**. Each page appears in the list as it's read.
 5. When it says **Done**, click the **Download** button to save the `.docx` file.
-6. To stop the scraper, close the black window.
+6. To stop the scraper, close the small window.
 
 If the browser doesn't open by itself, go to <http://localhost:8000>.
+
+### First launch on a Mac
+
+The first time you open `Start Scraper.command`, macOS may block it because it was downloaded from the internet and isn't from a registered Apple developer. To allow it once:
+
+1. Right-click (or Control-click) **`Start Scraper.command`** → **Open** → **Open**.
+2. On newer versions of macOS, that may not show an **Open** button. Instead, go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the message about `Start Scraper.command`.
+
+After that, double-clicking works normally.
+
+If Mac says the file "could not be executed because you do not have appropriate access privileges", open Terminal, type `chmod +x ` (with a space after it), drag the file into the Terminal window, and press Return.
 
 ### Opening the file in Google Docs
 
@@ -43,6 +58,8 @@ If the browser doesn't open by itself, go to <http://localhost:8000>.
 ```bash
 python scrape.py https://example.com
 ```
+
+On a Mac, type `python3` instead of `python`.
 
 This saves `example.com.docx` in the current folder.
 
@@ -58,12 +75,14 @@ This saves `example.com.docx` in the current folder.
 - **Google Docs has a size limit** of about 1 million characters, so a very large site may be too big to open there as one document. Lower **Max pages** if that happens.
 - **The web page only works on your own computer.** Other people on your network can't reach it.
 - **It runs one scrape at a time.** The result is only kept until you download it or start another scrape.
+- **`CERTIFICATE_VERIFY_FAILED` error (Mac):** run **Install Certificates.command** as described in [What you need](#what-you-need).
 - **"Port 8000 already in use" error:** the scraper is probably already running in another window. Close that window and try again.
 
 ## Files
 
 | File | What it is |
 |------|------------|
-| `Start Scraper.bat` | Double-click to start |
+| `Start Scraper.bat` | Double-click to start (Windows) |
+| `Start Scraper.command` | Double-click to start (Mac) |
 | `ui.py` | The web page |
 | `scrape.py` | The scraper itself, which also works on its own from the command line |
