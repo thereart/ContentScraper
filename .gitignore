@@ -1,5 +1,7 @@
 __pycache__/
 *.docx
 *.md
-.claude/
+/.claude/
 !README.md
+.api_key
+!v2/.claude/skills/**/*.md
