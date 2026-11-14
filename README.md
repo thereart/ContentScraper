@@ -5,6 +5,8 @@ Give it a website address and it reads the text from every page on that site, th
 The document has a contents list, then one section per page with the page title, its web address, and its text. Headings and bullet points are kept. Menus, headers and footers are left out so they don't repeat on every page.
 
 > **New: [v2](v2/)** also uses Claude to write a brand profile, plan a new site, and rewrite every page for tone, brand and SEO. See the [v2 README](v2/README.md).
+>
+> **New: [Sitemap Generator](sitemap/)** plans a new site's pages from a Pebble package, customised to what the client wants. See the [Sitemap Generator README](sitemap/README.md).
 
 ## What you need
 

@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sitemap Generator · Pebble</title>
+<style>
+  :root { --ink:#1d2321; --muted:#66706c; --line:#dfe3e1; --bg:#f6f7f6; --accent:#2f6f5e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+  header { padding:20px 28px 8px; }
+  h1 { margin:0; font-size:22px; }
+  header p, .note { color:var(--muted); margin:4px 0 0; }
+  main { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:24px; padding:16px 28px 40px; align-items:start; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  h2 { font-size:15px; margin:0 0 12px; }
+  label { display:block; font-size:13px; color:var(--muted); margin-bottom:10px; }
+  input, select, textarea, button { font:inherit; color:inherit; }
+  input[type=text], select, textarea { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:6px; background:#fff; margin-top:3px; }
+  textarea { min-height:64px; resize:vertical; font-size:14px; }
+  button { padding:7px 12px; border:1px solid var(--line); border-radius:6px; background:#fff; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+  .mod { border-top:1px solid var(--line); padding:12px 0; }
+  .mod:first-child { border-top:0; padding-top:0; }
+  .mod.off .fields { display:none; }
+  .mod.off .name { color:var(--muted); }
+  .mod .head { display:flex; gap:10px; align-items:center; }
+  .mod .head .name { font-weight:600; flex:1; }
+  .tag { font-size:11px; padding:1px 7px; border-radius:20px; background:#eef2f0; color:var(--muted); font-weight:500; margin-left:6px; }
+  .mod .fields { display:grid; grid-template-columns:1fr 1fr 120px; gap:0 10px; margin:10px 0 0 26px; }
+  .mod .fields .wide { grid-column:1 / -1; }
+  .icon { padding:3px 8px; font-size:13px; }
+  .fit { padding:10px 12px; border-radius:8px; background:#eef5f2; margin-bottom:12px; }
+  pre { margin:0; white-space:pre-wrap; font:13px/1.6 ui-monospace,Consolas,monospace; max-height:60vh; overflow:auto; }
+  #out { position:sticky; top:16px; }
+  .count { color:var(--muted); font-size:13px; margin:0 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sitemap Generator</h1>
+  <p>Plan the pages of a new hotel site from a Pebble package, then customise it to what the client wants.</p>
+</header>
+<main>
+  <section>
+    <div class="card">
+      <h2>Project</h2>
+      <div class="grid2">
+        <label>Property name<input type="text" id="property" placeholder="e.g. Verve on Sixth"></label>
+        <label>Live domain (for sitemap.xml)<input type="text" id="domain" placeholder="e.g. verveonsixth.com.au"></label>
+      </div>
+      <label>Start from a package (switches the package pages on or off; add-ons and standard pages are kept)
+        <select id="package"></select></label>
+      <div class="row">
+        <button id="short" type="button">Use short menu names: Stay, Eat, Play, Offers</button>
+        <button id="reset" type="button">Start over</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Home page layout, top to bottom</h2>
+      <p class="note" style="margin:-6px 0 12px">Tick the sections the home page should have. The notes say what content each one needs. Teasers only show when their page is ticked below.</p>
+      <div id="home"></div>
+      <div class="row" style="margin-top:12px">
+        <input type="text" id="newSection" placeholder="Add a section, e.g. Pet friendly stays" style="flex:1;margin:0">
+        <button id="addSection" type="button">Add section</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Pages, in menu order</h2>
+      <p class="note" style="margin:-6px 0 12px">Tick a page to include it. For list pages, type one item per line (rooms, restaurants, treatments…) and each gets its own detail page. Leave the address blank to make it from the name.</p>
+      <div id="mods"></div>
+    </div>
+
+    <div class="card">
+      <h2>Add a page the client wants</h2>
+      <div class="row">
+        <input type="text" id="newLabel" placeholder="Page name, e.g. Pet Friendly" style="flex:1;margin:0">
+        <select id="newKind" style="width:auto;margin:0">
+          <option value="page">Single page</option>
+          <option value="list">List + detail pages</option>
+        </select>
+        <button id="add" type="button">Add</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="out">
+    <div class="card">
+      <div class="fit" id="fit"></div>
+      <p class="count" id="count"></p>
+      <pre id="tree"></pre>
+    </div>
+    <div class="card">
+      <h2>Export</h2>
+      <div class="row">
+        <button class="primary" id="save" type="button">Save plan (.json)</button>
+        <button id="open" type="button">Open plan…</button>
+        <input type="file" id="file" accept=".json,application/json" hidden>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="copy" type="button">Copy outline</button>
+        <button id="csv" type="button">Download page list (.csv)</button>
+        <button id="xml" type="button">Download sitemap.xml</button>
+      </div>
+      <p class="note" style="margin-top:10px">Save plan keeps every setting, so you can open it again later. Copy outline pastes into an email or Google Doc for the client.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+// Modules and packages from "Pebble Website Packages 2026". [id, label, kind, menu, default items, tag, note]
+const DEFS = [
+  ['accom', 'Accommodation', 'page', 'main', '', 'Package', 'Single accommodation page (Getting Started)'],
+  ['rooms', 'Rooms', 'list', 'main', '', 'Package', 'Rooms list page plus a page per room'],
+  ['dining', 'Dining', 'list', 'main', '', 'Package', 'Per restaurant or bar: menu downloads, opening times, mini gallery'],
+  ['spa', 'Spa', 'list', 'main', '', 'Package', 'Treatment menu, spa packages, mini gallery'],
+  ['experiences', 'Experiences', 'list', 'main', '', 'Package', 'Local attractions, dining, facilities'],
+  ['packages', 'Packages', 'list', 'main', '', 'Package', 'Also pulls onto the home page'],
+  ['events', 'Events', 'list', 'main', 'Weddings\nMeetings & Conferences\nVenues', 'Package', 'Weddings, meetings, packages, venues, gallery'],
+  ['gallery', 'Gallery', 'page', 'main', '', 'Package', 'Photo gallery of the whole experience'],
+  ['upcoming', 'Upcoming Events', 'page', 'main', '', 'Add-on', "What's on calendar"],
+  ['blog', 'Blog', 'list', 'footer', '', 'Add-on', 'News or journal; posts can be listed as items'],
+  ['about', 'About', 'page', 'main', '', 'Standard', ''],
+  ['location', 'Location', 'page', 'main', '', 'Standard', 'Interactive map and directions'],
+  ['contact', 'Contact', 'page', 'main', '', 'Standard', ''],
+  ['vouchers', 'Gift Vouchers', 'page', 'footer', '', 'Add-on', 'Online shop for gift vouchers'],
+  ['tickets', 'Event Tickets', 'page', 'hidden', '', 'Add-on', 'Online shop for ticketed events'],
+  ['compendium', 'Compendium', 'list', 'hidden',
+    'Your Room\nFeeling Hungry\nYour Wellbeing\nOur Facilities\nExplore Nearby\nGeneral Info FAQs\nGet Social\nOur Gift to You',
+    'Add-on', 'Digital guest compendium: landing page plus a page per category'],
+  ['faqs', 'FAQs', 'page', 'footer', '', 'Standard', ''],
+  ['privacy', 'Privacy Policy', 'page', 'footer', '', 'Standard', ''],
+  ['terms', 'Terms & Conditions', 'page', 'footer', '', 'Standard', ''],
+];
+const STANDARD_ON = ['location', 'contact', 'privacy'];
+const PACKAGES = [
+  { id: 'p1', name: 'Getting Started (Option 1)', on: ['accom', 'experiences'] },
+  { id: 'p2', name: 'Revenue Booster (Option 2)', on: ['rooms', 'experiences', 'packages', 'gallery'] },
+  { id: 'p3', name: 'Deluxe Functionality (Option 3)', on: ['rooms', 'experiences', 'packages', 'gallery', 'dining', 'spa', 'events'] },
+  { id: 'p4', name: 'Boutique Custom (Option 4)', on: ['rooms', 'experiences', 'packages', 'gallery', 'dining', 'spa', 'events'] },
+];
+// Home page sections, top to bottom. [id, label, needs page, tag, on by default, content notes]
+const HOME = [
+  ['hero', 'Hero slider or video', '', 'Standard', true, 'Full-width slider (3–5 images) or auto-play video, with a short headline'],
+  ['booking', 'Booking bar', '', 'Standard', true, 'Check-in and check-out dates that open the booking engine'],
+  ['welcome', 'Welcome intro', '', 'Standard', true, 'Headline and about 80–120 words on what makes the property special'],
+  ['accom', 'Accommodation teaser', 'accom', 'Standard', true, 'Image and short intro linking to the Accommodation page'],
+  ['rooms', 'Rooms teaser', 'rooms', 'Standard', true, 'Slider of rooms, each linking to its room page'],
+  ['packages', 'Packages and offers', 'packages', 'Standard', true, 'Current packages, pulled in from the Packages module'],
+  ['bookdirect', 'Book direct benefits', '', 'Standard', true, '3–5 short reasons to book direct (best rate, perks)'],
+  ['experiences', 'Experiences teaser', 'experiences', 'Standard', true, 'A few experiences linking to their pages'],
+  ['dining', 'Dining teaser', 'dining', 'Standard', true, 'Image, one-line intro and opening times, linking to Dining'],
+  ['spa', 'Spa teaser', 'spa', 'Standard', true, 'Image and one-line intro linking to the Spa'],
+  ['events', 'Events teaser', 'events', 'Standard', true, 'Weddings and meetings intro linking to Events'],
+  ['gallery', 'Gallery strip', 'gallery', 'Standard', true, 'Row of images linking to the Gallery page'],
+  ['reviews', 'Reviews', '', 'Standard', true, 'Two or three guest reviews or awards'],
+  ['instagram', 'Instagram feed', '', 'Add-on', false, 'Live feed of the property’s Instagram posts'],
+  ['map', 'Map and directions', '', 'Standard', true, 'Interactive map with the address and directions'],
+  ['subscribe', 'Email subscribe', '', 'Standard', true, 'Pebble Mailer sign-up form'],
+  ['popup', 'Promotional pop-up', '', 'Add-on', false, 'Book-direct offer pop-up the client can switch on and off'],
+];
+const newHome = () => HOME.map(([id, label, needs, tag, on, notes]) => ({ id, label, needs, tag, on, notes }));
+const PACKAGE_IDS =DEFS.filter(d => d[5] === 'Package').map(d => d[0]);
+const SHORT = { accom: 'Stay', rooms: 'Stay', dining: 'Eat', experiences: 'Play', packages: 'Offers' };
+const STORE = 'pebble-sitemap-plan';
+
+function slugify(s) {
+  return s.toLowerCase().replace(/&/g, ' and ').replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function newPlan(pkg = 'p2') {
+  const on = new Set([...PACKAGES.find(p => p.id === pkg).on, ...STANDARD_ON]);
+  return {
+    property: '', domain: '', package: pkg,
+    modules: DEFS.map(([id, label, kind, menu, items, tag, note]) =>
+      ({ id, label, slug: '', kind, menu, items, tag, note, on: on.has(id) })),
+    home: newHome(),
+  };
+}
+
+// Flat page list: what every export is made from.
+function buildPages(plan) {
+  const pages = [{ title: 'Home', path: '/', parent: '', module: 'home', level: 0, menu: 'main' }];
+  const used = new Set(['/']);
+  const uniq = p => { let q = p, n = 2; while (used.has(q)) q = p.replace(/\/$/, `-${n++}/`); used.add(q); return q; };
+  for (const m of plan.modules) {
+    if (!m.on) continue;
+    const path = uniq(`/${slugify(m.slug) || slugify(m.label) || m.id}/`);
+    pages.push({ title: m.label || m.id, path, parent: '/', module: m.id, level: 1, menu: m.menu });
+    if (m.kind !== 'list') continue;
+    for (const item of m.items.split('\n').map(s => s.trim()).filter(Boolean))
+      pages.push({ title: item, path: uniq(`${path}${slugify(item) || 'item'}/`), parent: path, module: m.id, level: 2, menu: m.menu });
+  }
+  return pages;
+}
+
+// Home sections that will show: ticked, and their page (if they need one) is ticked too.
+function homeSections(plan) {
+  const on = new Set(plan.modules.filter(m => m.on).map(m => m.id));
+  return plan.home.filter(s => s.on && (!s.needs || on.has(s.needs)));
+}
+
+// Smallest package whose modules cover what's ticked; everything else is listed as extra.
+function fit(plan) {
+  const on = plan.modules.filter(m => m.on);
+  const core = on.filter(m => PACKAGE_IDS.includes(m.id)).map(m => m.id);
+  // accom (single page) is covered by any package that has the rooms module
+  const covers = (p, id) => p.on.includes(id) || (id === 'accom' && p.on.includes('rooms'));
+  const pkg = PACKAGES.slice(0, 3).find(p => core.every(id => covers(p, id))) || PACKAGES[3];
+  const extras = [...on.filter(m => m.tag === 'Add-on' || m.tag === 'Custom').map(m => m.label),
+    ...homeSections(plan).filter(s => s.tag === 'Add-on').map(s => s.label + ' (home page)')];
+  return { pkg, extras };
+}
+
+const MENU_NAME = { main: 'main menu', footer: 'footer', hidden: 'not in menu' };
+function outline(plan, pages) {
+  const head = (plan.property || 'New site') + (plan.domain ? ` (${domainUrl(plan.domain)})` : '');
+  const sections = homeSections(plan).map((s, i) => `      ${i + 1}. ${s.label}${s.notes.trim() ? ': ' + s.notes.trim() : ''}`);
+  return head + '\n\n' + pages.map((p, i) =>
+    `${'    '.repeat(p.level)}${p.level ? '- ' : ''}${p.title}  ${p.path}${p.level === 1 && p.menu !== 'main' ? `  [${MENU_NAME[p.menu]}]` : ''}`
+    + (i === 0 && sections.length ? '\n    Home page layout:\n' + sections.join('\n') : '')
+  ).join('\n');
+}
+
+function csv(pages) {
+  const q = v => `"${String(v).replace(/"/g, '""')}"`;
+  return ['Title,Address,Parent,Module,Level,Menu', ...pages.map(p =>
+    [p.title, p.path, p.parent, p.module, p.level, MENU_NAME[p.menu]].map(q).join(','))].join('\r\n');
+}
+
+function domainUrl(d) {
+  d = d.trim().replace(/\/+$/, '');
+  return d && !/^https?:\/\//i.test(d) ? 'https://' + d : d;
+}
+
+function sitemapXml(plan, pages) {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const base = esc(domainUrl(plan.domain));
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + pages.map(p => `  <url><loc>${base}${esc(p.path)}</loc></url>`).join('\n') + '\n</urlset>\n';
+}
+
+function selftest() {
+  const ok = (c, m) => { if (!c) throw new Error('selftest: ' + m); };
+  ok(slugify("Meetings & Conferences") === 'meetings-and-conferences', 'slug &');
+  ok(slugify("  Owner's Suite!! ") === 'owners-suite', 'slug punctuation');
+  const p = newPlan('p2');
+  p.modules.find(m => m.id === 'rooms').items = 'King Room\nKing Room\n\n';
+  const pages = buildPages(p);
+  ok(pages[0].path === '/', 'home first');
+  ok(pages.some(x => x.path === '/rooms/king-room/') && pages.some(x => x.path === '/rooms/king-room-2/'), 'duplicate items get unique addresses');
+  ok(fit(p).pkg.id === 'p2', 'p2 preset fits p2');
+  p.modules.find(m => m.id === 'spa').on = true;
+  ok(fit(p).pkg.id === 'p3', 'spa needs p3');
+  const p1 = newPlan('p1');
+  ok(fit(p1).pkg.id === 'p1', 'p1 preset fits p1');
+  p1.modules.find(m => m.id === 'gallery').label = 'Experiences';
+  p1.modules.find(m => m.id === 'gallery').on = true;
+  ok(new Set(buildPages(p1).map(x => x.path)).size === buildPages(p1).length, 'no duplicate addresses');
+  ok(csv([{ title: 'A "b"', path: '/', parent: '', module: 'home', level: 0, menu: 'main' }]).includes('"A ""b"""'), 'csv quoting');
+  ok(sitemapXml({ domain: 'a.com/' }, [{ path: '/x/' }]).includes('<loc>https://a.com/x/</loc>'), 'xml loc');
+  const h = newPlan('p1');
+  ok(!homeSections(h).some(s => s.id === 'rooms') && homeSections(h).some(s => s.id === 'accom'), 'teasers follow ticked pages');
+  ok(outline(h, buildPages(h)).includes('Home page layout:\n      1. Hero slider or video'), 'outline lists sections under Home');
+  h.home.find(s => s.id === 'instagram').on = true;
+  ok(fit(h).extras.includes('Instagram feed (home page)'), 'add-on section is an extra');
+  ok(validPlan({ modules: [] }).home.length === HOME.length, 'old plans get default sections');
+  return 'ok';
+}
+
+// ---------- UI ----------
+let plan = load() || newPlan();
+const $ = id => document.getElementById(id);
+
+function load() {
+  try { return validPlan(JSON.parse(localStorage.getItem(STORE))); } catch { return null; }
+}
+function validPlan(d) {
+  if (!d || !Array.isArray(d.modules)) return null;
+  const s = v => typeof v === 'string' ? v : '';
+  return {
+    property: s(d.property), domain: s(d.domain), package: s(d.package) || 'p2',
+    modules: d.modules.filter(m => m && s(m.id)).map(m => ({
+      id: s(m.id), label: s(m.label), slug: s(m.slug), kind: m.kind === 'list' ? 'list' : 'page',
+      menu: MENU_NAME[m.menu] ? m.menu : 'main', items: s(m.items), tag: s(m.tag), note: s(m.note), on: !!m.on,
+    })),
+    // plans saved before home sections existed get the defaults
+    home: Array.isArray(d.home) ? d.home.filter(x => x && s(x.id)).map(x => ({
+      id: s(x.id), label: s(x.label), needs: s(x.needs), tag: s(x.tag), notes: s(x.notes), on: !!x.on,
+    })) : newHome(),
+  };
+}
+
+function download(name, text, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+const fileBase = () => slugify(plan.property) || 'sitemap';
+
+function renderOutput() {
+  localStorage.setItem(STORE, JSON.stringify(plan));
+  const pages = buildPages(plan);
+  const { pkg, extras } = fit(plan);
+  $('fit').textContent = `Fits: ${pkg.name}` + (extras.length ? ` · plus extras to quote: ${extras.join(', ')}` : '');
+  $('count').textContent = `${pages.length} pages`;
+  $('tree').textContent = outline(plan, pages);
+}
+
+function renderHome() {
+  const box = $('home');
+  box.textContent = '';
+  const ticked = new Set(plan.modules.filter(m => m.on).map(m => m.id));
+  plan.home.forEach((s, i) => {
+    const waiting = s.needs && !ticked.has(s.needs);
+    const row = document.createElement('div');
+    row.className = 'mod' + (s.on && !waiting ? '' : ' off');
+    row.innerHTML = `
+      <div class="head">
+        <input type="checkbox" aria-label="Include section">
+        <span class="name"></span>
+        <button type="button" class="icon" data-move="-1" aria-label="Move up">↑</button>
+        <button type="button" class="icon" data-move="1" aria-label="Move down">↓</button>
+      </div>
+      <div class="fields" style="grid-template-columns:1fr 2fr">
+        <label>Section name<input type="text" data-k="label"></label>
+        <label>Content needed<textarea data-k="notes" style="min-height:40px"></textarea></label>
+      </div>`;
+    const name = row.querySelector('.name');
+    name.textContent = s.label || s.id;
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    const page = s.needs && plan.modules.find(m => m.id === s.needs);
+    tag.textContent = waiting ? `needs ${page ? page.label : s.needs} page` : (s.tag || 'Custom');
+    name.append(tag);
+    const cb = row.querySelector('input[type=checkbox]');
+    cb.checked = s.on;
+    cb.onchange = () => { s.on = cb.checked; renderHome(); renderOutput(); };
+    row.querySelectorAll('[data-k]').forEach(f => {
+      f.value = s[f.dataset.k];
+      f.oninput = () => {
+        s[f.dataset.k] = f.value;
+        if (f.dataset.k === 'label') name.firstChild.textContent = f.value || s.id;
+        renderOutput();
+      };
+    });
+    if (s.tag === 'Custom') {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'icon';
+      del.textContent = 'Remove';
+      del.onclick = () => { plan.home.splice(i, 1); renderHome(); renderOutput(); };
+      row.querySelector('.head').append(del);
+    }
+    row.querySelectorAll('[data-move]').forEach(b => b.onclick = () => {
+      const j = i + +b.dataset.move;
+      if (j < 0 || j >= plan.home.length) return;
+      [plan.home[i], plan.home[j]] = [plan.home[j], plan.home[i]];
+      renderHome();
+      renderOutput();
+    });
+    box.append(row);
+  });
+}
+
+function renderForm() {
+  renderHome();
+  $('property').value = plan.property;
+  $('domain').value = plan.domain;
+  $('package').value = plan.package;
+  const box = $('mods');
+  box.textContent = '';
+  plan.modules.forEach((m, i) => {
+    const row = document.createElement('div');
+    row.className = 'mod' + (m.on ? '' : ' off');
+    row.innerHTML = `
+      <div class="head">
+        <input type="checkbox" aria-label="Include page">
+        <span class="name"></span>
+        <button type="button" class="icon" data-move="-1" aria-label="Move up">↑</button>
+        <button type="button" class="icon" data-move="1" aria-label="Move down">↓</button>
+      </div>
+      <div class="fields">
+        <label>Menu name<input type="text" data-k="label"></label>
+        <label>Address<input type="text" data-k="slug"></label>
+        <label>Shows in<select data-k="menu">
+          <option value="main">Main menu</option><option value="footer">Footer</option><option value="hidden">Not in menu</option>
+        </select></label>
+      </div>`;
+    const name = row.querySelector('.name');
+    name.textContent = m.label || m.id;
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = (m.tag || 'Custom') + (m.kind === 'list' ? ' · list' : '');
+    tag.title = m.note;
+    name.append(tag);
+    const cb = row.querySelector('input[type=checkbox]');
+    cb.checked = m.on;
+    cb.onchange = () => { m.on = cb.checked; row.classList.toggle('off', !m.on); renderHome(); renderOutput(); };
+    const fields = row.querySelector('.fields');
+    if (m.note) {
+      const note = document.createElement('p');
+      note.className = 'note wide';
+      note.style.margin = '0 0 8px';
+      note.textContent = m.note;
+      fields.prepend(note);
+    }
+    if (m.kind === 'list') {
+      const l = document.createElement('label');
+      l.className = 'wide';
+      l.textContent = 'Items, one per line (each gets a detail page)';
+      const ta = document.createElement('textarea');
+      ta.dataset.k = 'items';
+      l.append(ta);
+      fields.append(l);
+    }
+    if (m.tag === 'Custom') {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'icon';
+      del.textContent = 'Remove';
+      del.onclick = () => { plan.modules.splice(i, 1); renderForm(); };
+      row.querySelector('.head').append(del);
+    }
+    fields.querySelectorAll('[data-k]').forEach(f => {
+      f.value = m[f.dataset.k];
+      if (f.dataset.k === 'slug') f.placeholder = slugify(m.label) || m.id;
+      f.oninput = () => {
+        m[f.dataset.k] = f.value;
+        if (f.dataset.k === 'label') {
+          name.firstChild.textContent = f.value || m.id;
+          row.querySelector('[data-k=slug]').placeholder = slugify(f.value) || m.id;
+        }
+        renderOutput();
+      };
+    });
+    row.querySelectorAll('[data-move]').forEach(b => b.onclick = () => {
+      const j = i + +b.dataset.move;
+      if (j < 0 || j >= plan.modules.length) return;
+      [plan.modules[i], plan.modules[j]] = [plan.modules[j], plan.modules[i]];
+      renderForm();
+    });
+    box.append(row);
+  });
+  renderOutput();
+}
+
+$('package').append(...PACKAGES.map(p => new Option(p.name, p.id)));
+$('package').onchange = e => {
+  plan.package = e.target.value;
+  const on = PACKAGES.find(p => p.id === plan.package).on;
+  plan.modules.forEach(m => { if (PACKAGE_IDS.includes(m.id)) m.on = on.includes(m.id); });
+  renderForm();
+};
+$('property').oninput = e => { plan.property = e.target.value; renderOutput(); };
+$('domain').oninput = e => { plan.domain = e.target.value; renderOutput(); };
+$('short').onclick = () => { plan.modules.forEach(m => { if (SHORT[m.id]) m.label = SHORT[m.id]; }); renderForm(); };
+$('reset').onclick = () => { if (confirm('Clear this plan and start over?')) { plan = newPlan(); renderForm(); } };
+$('add').onclick = () => {
+  const label = $('newLabel').value.trim();
+  if (!label) return $('newLabel').focus();
+  plan.modules.push({ id: 'custom-' + Date.now(), label, slug: '', kind: $('newKind').value, menu: 'main', items: '', tag: 'Custom', note: '', on: true });
+  $('newLabel').value = '';
+  renderForm();
+};
+$('addSection').onclick = () => {
+  const label = $('newSection').value.trim();
+  if (!label) return $('newSection').focus();
+  plan.home.push({ id: 'custom-' + Date.now(), label, needs: '', tag: 'Custom', notes: '', on: true });
+  $('newSection').value = '';
+  renderHome();
+  renderOutput();
+};
+$('save').onclick =() => download(fileBase() + '.sitemap.json',
+  JSON.stringify({ tool: 'pebble-sitemap', version: 2, ...plan, pages: buildPages(plan), homeSections: homeSections(plan) }, null, 2), 'application/json');
+$('open').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  let d = null;
+  try { d = validPlan(JSON.parse(await f.text())); } catch {}
+  if (!d) return alert("That file isn't a saved sitemap plan.");
+  plan = d;
+  renderForm();
+};
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText(outline(plan, buildPages(plan)));
+  $('copy').textContent = 'Copied';
+  setTimeout(() => $('copy').textContent = 'Copy outline', 1500);
+};
+$('csv').onclick = () => download(fileBase() + '-pages.csv', csv(buildPages(plan)), 'text/csv');
+$('xml').onclick = () => {
+  if (!plan.domain.trim()) { alert('Fill in the live domain first, so the sitemap has full addresses.'); return $('domain').focus(); }
+  download('sitemap.xml', sitemapXml(plan, buildPages(plan)), 'application/xml');
+};
+
+selftest();
+renderForm();
+</script>
+</body>
+</html>
