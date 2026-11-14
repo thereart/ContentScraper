@@ -309,6 +309,8 @@ const fileBase = () => slugify(plan.property) || 'sitemap';
 function renderOutput() {
   localStorage.setItem(STORE, JSON.stringify(plan));
   const pages = buildPages(plan);
+  // Content Scraper v3 serves this page from its own address and reads the finished plan from here
+  localStorage.setItem(STORE + '-built', JSON.stringify({ property: plan.property, pages, homeSections: homeSections(plan) }));
   const { pkg, extras } = fit(plan);
   $('fit').textContent = `Fits: ${pkg.name}` + (extras.length ? ` · plus extras to quote: ${extras.join(', ')}` : '');
   $('count').textContent = `${pages.length} pages`;

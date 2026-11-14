@@ -5,3 +5,4 @@ __pycache__/
 !README.md
 .api_key
 !v2/.claude/skills/**/*.md
+!v3/.claude/skills/**/*.md

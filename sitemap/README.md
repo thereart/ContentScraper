@@ -34,3 +34,7 @@ No install needed: double-click **`Sitemap Generator.html`** and it opens in you
 | **Download sitemap.xml** | A standard sitemap for search engines. Needs the live domain filled in. |
 
 Your work is also kept in the browser between visits. **Start over** clears it.
+
+## Using it with the scraper
+
+[Content Scraper v3](../v3/) has this tool built in. Its plan picks which pages the old site's content goes to. See the [v3 README](../v3/README.md).

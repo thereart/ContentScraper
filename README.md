@@ -7,6 +7,8 @@ The document has a contents list, then one section per page with the page title,
 > **New: [v2](v2/)** also uses Claude to write a brand profile, plan a new site, and rewrite every page for tone, brand and SEO. See the [v2 README](v2/README.md).
 >
 > **New: [Sitemap Generator](sitemap/)** plans a new site's pages from a Pebble package, customised to what the client wants. See the [Sitemap Generator README](sitemap/README.md).
+>
+> **New: [v3](v3/)** joins the two: plan the new site in the Sitemap Generator, and Claude sorts the old site's content into that plan, page by page and home page section by section. See the [v3 README](v3/README.md).
 
 ## What you need
 
