@@ -6,7 +6,7 @@ if ! command -v python3 >/dev/null 2>&1; then
     read -n 1 -s -r -p "Press any key to close"
     exit 1
 fi
-python3 -c "import anthropic" 2>/dev/null || python3 -m pip install -q anthropic
+python3 -c "import anthropic" 2>/dev/null || python3 -m pip install -q --no-warn-script-location anthropic
 python3 ui.py
 # Only reached if the server stops with an error, e.g. port 8001 already in use.
 read -n 1 -s -r -p "Press any key to close"
